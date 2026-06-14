@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UAlbany Basketball — Player Development</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --purple:#46166B;--purple-dark:#2A0D45;--purple-light:#6B3A9E;--purple-faint:#F3EDF9;
+  --gold:#EAAA00;--gold-dark:#C9900A;--gold-faint:#FDF8E8;
+  --text:#1A1A1A;--text-sec:#555;--text-ter:#888;
+  --bg:#F5F5F7;--bg2:#FFFFFF;--bg3:#EFEFEF;
+  --border:#E0E0E0;--radius:8px;--radius-lg:12px;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+body{background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+.app{display:flex;height:100vh}
+.sidebar{width:220px;min-width:220px;background:var(--purple-dark);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-top{padding:16px 14px 12px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.logo-ua{font-size:10px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:.1em}
+.logo-title{font-size:17px;font-weight:600;color:#fff;margin-top:2px}
+.gs-btn{display:flex;align-items:center;gap:7px;margin-top:10px;padding:7px 10px;border-radius:var(--radius);background:rgba(255,255,255,0.08);font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;border:1px solid rgba(255,255,255,0.15);transition:background .15s}
+.gs-btn:hover{background:rgba(255,255,255,0.14)}
+.gs-dot{width:7px;height:7px;border-radius:50%;background:#888;flex-shrink:0;transition:background .3s}
+.gs-dot.on{background:#4CAF50}
+.sidebar-nav{display:flex;gap:6px;padding:10px 14px 0}
+.snav-btn{flex:1;padding:5px 0;font-size:10px;font-weight:600;text-align:center;border-radius:var(--radius);border:1px solid rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.55);cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
+.snav-btn.active{background:var(--gold);color:var(--purple-dark);border-color:var(--gold)}
+.snav-btn:hover:not(.active){background:rgba(255,255,255,0.1);color:#fff}
+.players-lbl{font-size:10px;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.08em;padding:10px 14px 4px}
+.player-list{flex:1;overflow-y:auto}
+.player-list::-webkit-scrollbar{width:4px}
+.player-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+.player-item{display:flex;align-items:center;gap:9px;padding:8px 14px;cursor:pointer;border-left:3px solid transparent;transition:background .15s}
+.player-item:hover{background:rgba(255,255,255,0.07)}
+.player-item.active{border-left-color:var(--gold);background:rgba(255,255,255,0.1)}
+.av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.pname{font-size:12px;font-weight:500;color:#fff}
+.psub{font-size:10px;color:rgba(255,255,255,0.45);margin-top:1px}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+.topbar{padding:14px 24px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px;position:sticky;top:0;z-index:10}
+.player-hdr{display:flex;align-items:center;gap:12px}
+.av-lg{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0}
+.pfull{font-size:18px;font-weight:600}
+.pmeta{font-size:12px;color:var(--text-sec);margin-top:2px}
+.tab-bar{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;flex-shrink:0}
+.tab{padding:6px 16px;font-size:12px;cursor:pointer;background:transparent;border:none;color:var(--text-sec);font-family:inherit;border-right:1px solid var(--border);transition:background .15s}
+.tab:last-child{border-right:none}
+.tab.active{background:var(--purple);color:#fff;font-weight:500}
+.tab:hover:not(.active){background:var(--bg3)}
+.content{padding:20px 24px;flex:1}
+.sec-label{font-size:10px;font-weight:600;color:var(--text-ter);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.cum-tag{font-size:9px;font-weight:600;background:var(--purple-faint);color:var(--purple);border-radius:4px;padding:1px 5px}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:16px}
+.mc{background:var(--bg2);border-radius:var(--radius);padding:12px 14px;border:1px solid var(--border);border-left:3px solid var(--purple)}
+.mc.gold{border-left-color:var(--gold)}
+.mc-label{font-size:11px;color:var(--text-sec);margin-bottom:3px}
+.mc-val{font-size:22px;font-weight:600;color:var(--text)}
+.mc-sub{font-size:10px;color:var(--text-ter);margin-top:3px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px}
+.card-title{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.chart-wrap{position:relative;width:100%}
+.sbar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sbar-lbl{font-size:11px;color:var(--text-sec);width:145px;flex-shrink:0}
+.sbar-bg{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.sbar-fill{height:100%;border-radius:3px;transition:width .4s}
+.sbar-val{font-size:11px;font-weight:600;width:52px;text-align:right;flex-shrink:0}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{text-align:left;font-weight:600;color:var(--text-ter);font-size:10px;padding:5px 8px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--border);white-space:nowrap;color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg3)}
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600}
+.b-green{background:#E8F5E9;color:#2E7D32}
+.b-amber{background:#FFF8E1;color:#F57F17}
+.b-purple{background:var(--purple-faint);color:var(--purple)}
+.b-red{background:#FFEBEE;color:#C62828}
+.btn{padding:6px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--text);display:inline-flex;align-items:center;gap:5px;transition:background .15s}
+.btn:hover{background:#E0E0E0}
+.btn-primary{background:var(--purple);color:#fff;border-color:var(--purple)}
+.btn-primary:hover{background:var(--purple-dark)}
+.btn-danger{background:#FFEBEE;color:#C62828;border-color:#FFCDD2;padding:3px 9px;font-size:10px}
+.btn-danger:hover{background:#FFCDD2}
+.empty{text-align:center;padding:32px;color:var(--text-ter);font-size:13px}
+.empty-icon{font-size:28px;display:block;margin-bottom:8px}
+.game-banner{background:var(--purple-faint);border:1px solid #C8A8E0;border-radius:var(--radius);padding:10px 16px;margin-bottom:14px;font-size:12px;color:var(--purple);display:flex;align-items:center;gap:8px}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:flex-start;justify-content:center;padding-top:48px;overflow-y:auto}
+.modal-box{background:var(--bg2);border-radius:var(--radius-lg);border:1px solid var(--border);padding:24px;width:500px;max-height:88vh;overflow-y:auto;margin:0 auto}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:16px}
+.field-label{font-size:11px;color:var(--text-sec);margin-bottom:4px;display:block}
+input[type=text],input[type=number],input[type=date],select{font-size:12px;font-family:inherit;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg2);color:var(--text);padding:7px 10px;width:100%;outline:none;transition:border .15s}
+input:focus,select:focus{border-color:var(--purple)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.form-grid.three{grid-template-columns:1fr 1fr 1fr}
+.form-sec{font-size:11px;font-weight:600;color:var(--text-sec);margin-bottom:8px;margin-top:4px;text-transform:uppercase;letter-spacing:.05em;border-top:1px solid var(--border);padding-top:10px}
+.form-sec:first-of-type{border-top:none;padding-top:0}
+.stepper{display:flex;align-items:center;gap:8px}
+.stepper-btn{width:28px;height:28px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg3);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.stepper-btn:hover{background:#D0D0D0}
+.stepper-val{font-size:16px;font-weight:600;min-width:30px;text-align:center}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.formula-note{font-size:10px;color:var(--text-ter);margin-top:3px}
+.info-box{background:var(--purple-faint);border:1px solid #C8A8E0;border-radius:var(--radius);padding:10px 12px;font-size:11px;color:var(--purple);margin-bottom:14px;line-height:1.6}
+
+.refresh-btn{display:flex;align-items:center;gap:6px;margin-top:8px;padding:7px 10px;border-radius:var(--radius);background:rgba(255,255,255,0.08);font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;border:1px solid rgba(255,255,255,0.15);transition:background .15s;width:100%}
+.refresh-btn:hover{background:rgba(255,255,255,0.14)}
+.refresh-btn.spinning .ri{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ri{display:inline-block;font-size:13px;transition:transform .3s}
+.countdown{margin-left:auto;font-size:10px;color:rgba(255,255,255,0.35)}
+
+.code-block{background:var(--bg3);border-radius:var(--radius);padding:10px 12px;font-size:10px;font-family:monospace;color:var(--text-sec);margin-bottom:14px;line-height:1.9}
+
+/* Leaderboard */
+.lb-header{display:grid;grid-template-columns:40px 1fr 90px 90px 90px;gap:0;padding:6px 14px;font-size:10px;font-weight:600;color:var(--text-ter);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+.lb-row{display:grid;grid-template-columns:40px 1fr 90px 90px 90px;gap:0;padding:10px 14px;border-bottom:1px solid var(--border);align-items:center;cursor:pointer;transition:background .15s}
+.lb-row:last-child{border-bottom:none}
+.lb-row:hover{background:var(--bg3)}
+.lb-rank{font-size:15px;font-weight:700;color:var(--text-ter)}
+.lb-rank.gold{color:var(--gold-dark)}
+.lb-rank.silver{color:#90A4AE}
+.lb-rank.bronze{color:#A1714A}
+.lb-name{display:flex;align-items:center;gap:9px}
+.lb-stat{font-size:13px;font-weight:600;text-align:right}
+.lb-bar-wrap{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:5px}
+.lb-bar{height:100%;border-radius:3px;background:var(--purple);transition:width .5s}
+.lb-sessions{font-size:10px;color:var(--text-ter);text-align:right}
+.lb-wl{font-size:11px;color:var(--text-sec);text-align:right}
+.lb-section-title{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.trophy{font-size:16px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="sidebar">
+  <div class="sidebar-top">
+    <div class="logo-ua">UAlbany Basketball</div>
+    <div class="logo-title">Player Dev</div>
+    <div class="gs-btn" id="gsBtnEl" onclick="openGsModal()">
+      <div class="gs-dot" id="gsDot"></div>
+      <span id="gsLabel">Connect Google Sheets</span>
+    </div>
+
+    <div class="refresh-btn" id="refreshBtn" onclick="manualRefresh()" style="display:none">
+      <span class="ri" id="refreshIcon">↻</span>
+      <span id="refreshLabel">Refresh data</span>
+      <span class="countdown" id="countdown"></span>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <button class="snav-btn active" id="snavRoster" onclick="setSidebarView('roster',this)">Roster</button>
+    <button class="snav-btn" id="snavLeader" onclick="setSidebarView('leaderboard',this)">Leaderboard</button>
+  </div>
+  <div class="players-lbl" id="sidebarLabel">Roster — 15 Players</div>
+  <div class="player-list" id="playerList"></div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="player-hdr" id="playerHdr"></div>
+    <div class="tab-bar" id="mainTabBar">
+      <button class="tab active" onclick="switchTab('practice',this)">Practice</button>
+      <button class="tab" onclick="switchTab('games',this)">Games</button>
+      <button class="tab" onclick="switchTab('overview',this)">Overview</button>
+    </div>
+  </div>
+  <div class="content" id="mainContent"></div>
+</div>
+</div>
+
+<!-- Google Sheets Modal -->
+<div class="modal-bg" id="gsModal">
+<div class="modal-box" style="width:480px">
+  <div class="modal-title">Connect Google Sheets</div>
+  <div class="info-box">
+    <strong>Setup steps:</strong><br>
+    1. Upload the UAlbany_PlayerDev spreadsheet to Google Drive<br>
+    2. Click <strong>Share → Anyone with the link → Viewer → Done</strong><br>
+    3. Copy the URL and paste it below — the dashboard auto-loads each player's tab
+  </div>
+  <div class="code-block">Tab names: E. Bussing · O. Engen · A. Fall · U. Graham · T. Jones · P. Kounta · Z. Matulu · B. Michaels · P. Miovic · M. Ndao · W. Paulino · M. Rose · P. Santos · C. Smith · K. Webb</div>
+  <div style="margin-bottom:12px">
+    <label class="field-label">Google Sheet URL</label>
+    <input type="text" id="gsUrlInput" placeholder="https://docs.google.com/spreadsheets/d/...">
+  </div>
+  <div id="gsErrMsg" style="font-size:11px;color:#C62828;margin-bottom:10px;display:none"></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeGsModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="connectSheet()">Connect & Load</button>
+  </div>
+</div>
+</div>
+
+<!-- Log Modal -->
+<div class="modal-bg" id="logModal">
+<div class="modal-box" id="logModalInner"></div>
+</div>
+
+<!-- Confirm delete modal -->
+<div class="modal-bg" id="confirmModal">
+<div class="modal-box" style="width:380px">
+  <div class="modal-title">Remove session?</div>
+  <div style="font-size:13px;color:var(--text-sec);margin-bottom:20px" id="confirmMsg"></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeConfirm()">Cancel</button>
+    <button class="btn btn-danger" style="font-size:13px;padding:6px 16px" onclick="confirmDelete()">Remove</button>
+  </div>
+</div>
+</div>
+
+<script>
+const PALETTE=[
+  {bg:'#EDE5F5',txt:'#46166B',ch:'#46166B'},
+  {bg:'#FDF8E8',txt:'#7A5500',ch:'#C9900A'},
+  {bg:'#E3EEF7',txt:'#1A3A5C',ch:'#2B5C8E'},
+  {bg:'#E8F4EC',txt:'#1A4A1F',ch:'#2E7D32'},
+  {bg:'#F5EDE8',txt:'#5C2A1A',ch:'#A0522D'},
+  {bg:'#EDE5F5',txt:'#3C1460',ch:'#6B3A9E'},
+  {bg:'#FDF8E8',txt:'#5C4000',ch:'#EAAA00'},
+];
+const DRIBBLE=new Set(['Erwann Bussing','U-Mier Graham','Ben Michaels','Petar Miovic','Callum Smith','Kean Webb']);
+const POTAST=new Set(['Ollie Engen','Abdoulaye Fall','Tyler Jones','Papa Kounta','Zacharie Matulu','Moustapha Ndao','Wilkin Paulino','Miles Rose','Pedro Santos']);
+const NAMES=['Erwann Bussing','Ollie Engen','Abdoulaye Fall','U-Mier Graham','Tyler Jones','Papa Kounta','Zacharie Matulu','Ben Michaels','Petar Miovic','Moustapha Ndao','Wilkin Paulino','Miles Rose','Pedro Santos','Callum Smith','Kean Webb'];
+const TAB={'Erwann Bussing':'E. Bussing','Ollie Engen':'O. Engen','Abdoulaye Fall':'A. Fall','U-Mier Graham':'U. Graham','Tyler Jones':'T. Jones','Papa Kounta':'P. Kounta','Zacharie Matulu':'Z. Matulu','Ben Michaels':'B. Michaels','Petar Miovic':'P. Miovic','Moustapha Ndao':'M. Ndao','Wilkin Paulino':'W. Paulino','Miles Rose':'M. Rose','Pedro Santos':'P. Santos','Callum Smith':'C. Smith','Kean Webb':'K. Webb'};
+
+const ST={
+  players:NAMES.map((n,i)=>({name:n,color:PALETTE[i%PALETTE.length],practice:[],games:[]})),
+  selected:0,tab:'practice',charts:{},sheetId:null,sidebarView:'roster',
+  pendingDelete:{type:null,index:null}
+};
+
+const ini=n=>n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+const cur=()=>ST.players[ST.selected];
+const sumF=(arr,fn)=>arr.reduce((s,x)=>s+(parseFloat(fn(x))||0),0);
+const fmt=(v,d=1)=>(v===null||v===undefined||isNaN(v)||!isFinite(v))?'—':parseFloat(v).toFixed(d);
+
+// Cumulative stat calculations
+const calcEfg=s=>{const fgm=sumF(s,x=>x.fgm),fga=sumF(s,x=>x.fga),tpm=sumF(s,x=>x.tpm);return fga>0?(fgm+0.5*tpm)/fga*100:null;};
+const calcAstTo=s=>{const a=sumF(s,x=>x.ast),t=sumF(s,x=>x.tov);return t>0?a/t:null;};
+const calcReb=s=>{const m=sumF(s,x=>x.rebMade),t=sumF(s,x=>x.rebTotal);return t>0?m/t*100:null;};
+const calcSpr=s=>{const m=sumF(s,x=>x.sprMade),t=sumF(s,x=>x.sprTotal);return t>0?m/t*100:null;};
+const calcDrib=s=>{const m=sumF(s,x=>x.dribFgm),t=sumF(s,x=>x.dribFga);return t>0?m/t*100:null;};
+const calcPot=s=>{const p=sumF(s,x=>x.potAst),a=sumF(s,x=>x.potActAst);return a>0?p/a:null;};
+const totalDW=p=>sumF(p.practice,s=>s.drillW);
+const totalDL=p=>sumF(p.practice,s=>s.drillL);
+const dwPct=p=>{const w=totalDW(p),l=totalDL(p),t=w+l;return t?(w/t*100):null;};
+const dailyEfg=s=>{const a=parseFloat(s.fga)||0;return a?((parseFloat(s.fgm)||0)+0.5*(parseFloat(s.tpm)||0))/a*100:null;};
+
+// ── Sidebar view toggle ─────────────────────────────────────────────────────
+function setSidebarView(view, el){
+  ST.sidebarView=view;
+  document.querySelectorAll('.snav-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  if(view==='roster'){
+    document.getElementById('sidebarLabel').textContent='Roster — 15 Players';
+    renderSidebar();
+    // restore player topbar
+    renderHeader();
+    document.getElementById('mainTabBar').style.display='flex';
+  } else {
+    document.getElementById('sidebarLabel').textContent='Drill Win % ranking';
+    renderLeaderboardSidebar();
+    renderLeaderboardMain();
+    document.getElementById('mainTabBar').style.display='none';
+  }
+}
+
+function renderLeaderboardSidebar(){
+  const sorted=[...ST.players].map(p=>({p,wp:dwPct(p)})).sort((a,b)=>{
+    if(a.wp===null&&b.wp===null)return 0;
+    if(a.wp===null)return 1;
+    if(b.wp===null)return -1;
+    return b.wp-a.wp;
+  });
+  document.getElementById('playerList').innerHTML=sorted.map(({p,wp},i)=>`
+    <div class="player-item" onclick="goToPlayer('${p.name}')">
+      <div style="width:18px;font-size:12px;font-weight:700;color:${i===0?'#EAAA00':i===1?'#90A4AE':i===2?'#A1714A':'rgba(255,255,255,0.3)'};flex-shrink:0">${i+1}</div>
+      <div class="av" style="background:${p.color.bg};color:${p.color.txt}">${ini(p.name)}</div>
+      <div><div class="pname">${p.name}</div><div class="psub">${wp!==null?wp.toFixed(1)+'%':'No data'}</div></div>
+    </div>`).join('');
+}
+
+function goToPlayer(name){
+  const i=ST.players.findIndex(p=>p.name===name);
+  if(i<0)return;
+  ST.selected=i;
+  setSidebarView('roster',document.getElementById('snavRoster'));
+}
+
+function renderLeaderboardMain(){
+  const sorted=[...ST.players].map((p,i)=>({p,i,wp:dwPct(p),tw:totalDW(p),tl:totalDL(p)}))
+    .sort((a,b)=>{
+      if(a.wp===null&&b.wp===null)return 0;
+      if(a.wp===null)return 1;
+      if(b.wp===null)return -1;
+      return b.wp-a.wp;
+    });
+  const maxWp=sorted.find(x=>x.wp!==null)?.wp||1;
+
+  document.getElementById('playerHdr').innerHTML=`
+    <div><div class="pfull" style="font-size:20px">🏆 Drill Win % Leaderboard</div>
+    <div class="pmeta">Season ranking — highest to lowest drill win percentage</div></div>`;
+
+  const rankColor=i=>i===0?'gold':i===1?'silver':i===2?'bronze':'';
+
+  document.getElementById('mainContent').innerHTML=`
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="lb-header">
+        <div>#</div><div>Player</div>
+        <div style="text-align:right">Win %</div>
+        <div style="text-align:right">W – L</div>
+        <div style="text-align:right">Sessions</div>
+      </div>
+      ${sorted.map(({p,wp,tw,tl},i)=>`
+        <div class="lb-row" onclick="goToPlayer('${p.name}')">
+          <div class="lb-rank ${rankColor(i)}">${i+1}</div>
+          <div class="lb-name">
+            <div class="av" style="background:${p.color.bg};color:${p.color.txt}">${ini(p.name)}</div>
+            <div>
+              <div style="font-size:12px;font-weight:600">${p.name}</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+                <div class="lb-bar-wrap" style="width:100px"><div class="lb-bar" style="width:${wp!==null?Math.round(wp/maxWp*100):0}%;background:${i===0?'var(--gold)':'var(--purple)'}"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="lb-stat" style="color:${wp!==null?(wp>=60?'#2E7D32':wp>=40?'#F57F17':'#C62828'):'var(--text-ter)'}">${wp!==null?wp.toFixed(1)+'%':'—'}</div>
+          <div class="lb-wl">${tw} – ${tl}</div>
+          <div class="lb-sessions">${p.practice.length} session${p.practice.length!==1?'s':''}</div>
+        </div>`).join('')}
+    </div>
+    <div style="font-size:11px;color:var(--text-ter);margin-top:10px;text-align:center">Click any player to view their full dashboard</div>`;
+}
+
+// ── Roster sidebar ──────────────────────────────────────────────────────────
+function renderSidebar(){
+  document.getElementById('playerList').innerHTML=ST.players.map((p,i)=>{
+    const wp=dwPct(p);
+    return`<div class="player-item${i===ST.selected?' active':''}" onclick="sel(${i})">
+      <div class="av" style="background:${p.color.bg};color:${p.color.txt}">${ini(p.name)}</div>
+      <div><div class="pname">${p.name}</div>${wp!==null?`<div class="psub">Drill W% ${wp.toFixed(1)}%</div>`:''}</div>
+    </div>`;}).join('');
+}
+
+function renderHeader(){
+  const p=cur(),w=totalDW(p),l=totalDL(p),wp=dwPct(p);
+  document.getElementById('playerHdr').innerHTML=`
+    <div class="av-lg" style="background:${p.color.bg};color:${p.color.txt}">${ini(p.name)}</div>
+    <div>
+      <div class="pfull">${p.name}</div>
+      <div class="pmeta">${p.practice.length} session${p.practice.length!==1?'s':''} &nbsp;·&nbsp; Drill record: <strong>${w}–${l}</strong>${wp!==null?' ('+wp.toFixed(1)+'%)':''} &nbsp;·&nbsp; ${p.games.length} game${p.games.length!==1?'s':''}</div>
+    </div>`;
+}
+
+function sel(i){
+  ST.selected=i;destroyCharts();renderSidebar();renderHeader();
+  if(ST.sheetId)loadPlayer(ST.players[i]);else renderContent();
+}
+function switchTab(t,el){
+  ST.tab=t;destroyCharts();
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');renderContent();
+}
+function destroyCharts(){Object.values(ST.charts).forEach(c=>{try{c.destroy();}catch(e){}});ST.charts={};}
+function renderContent(){
+  if(ST.tab==='practice')renderPractice();
+  else if(ST.tab==='games')renderGames();
+  else renderOverview();
+}
+
+// ── Delete session ──────────────────────────────────────────────────────────
+let pendingDel={type:null,idx:null};
+function promptDelete(type,idx,label){
+  pendingDel={type,idx};
+  document.getElementById('confirmMsg').textContent=`Remove the session from ${label}? This cannot be undone.`;
+  document.getElementById('confirmModal').style.display='flex';
+}
+function closeConfirm(){document.getElementById('confirmModal').style.display='none';}
+function confirmDelete(){
+  const p=cur();
+  if(pendingDel.type==='practice') p.practice.splice(pendingDel.idx,1);
+  else p.games.splice(pendingDel.idx,1);
+  closeConfirm();destroyCharts();renderSidebar();renderHeader();renderContent();
+  if(ST.sidebarView==='leaderboard') renderLeaderboardSidebar();
+}
+
+// ── Practice ────────────────────────────────────────────────────────────────
+function renderPractice(){
+  const p=cur(),s=p.practice;
+  const tw=totalDW(p),tl=totalDL(p),wp=dwPct(p);
+  const efg=calcEfg(s),astto=calcAstTo(s),reb=calcReb(s),spr=calcSpr(s);
+  const drib=DRIBBLE.has(p.name)?calcDrib(s):null;
+  const pot=POTAST.has(p.name)?calcPot(s):null;
+  const tFgm=sumF(s,x=>x.fgm),tFga=sumF(s,x=>x.fga),tTpm=sumF(s,x=>x.tpm);
+  const tAst=sumF(s,x=>x.ast),tTov=sumF(s,x=>x.tov);
+  const tRM=sumF(s,x=>x.rebMade),tRT=sumF(s,x=>x.rebTotal);
+  const tSM=sumF(s,x=>x.sprMade),tST=sumF(s,x=>x.sprTotal);
+  const tDM=sumF(s,x=>x.dribFgm),tDA=sumF(s,x=>x.dribFga);
+  const tPA=sumF(s,x=>x.potAst),tPAA=sumF(s,x=>x.potActAst);
+
+  // Build reversed array with original indices for delete
+  const sWithIdx=s.map((x,i)=>({...x,_i:i})).reverse();
+
+  document.getElementById('mainContent').innerHTML=`
+    <div class="sec-label">Drill Record <span class="cum-tag">cumulative</span></div>
+    <div class="metrics-grid" style="margin-bottom:16px">
+      <div class="mc"><div class="mc-label">Drill Wins</div><div class="mc-val" style="color:#46166B">${tw}</div><div class="mc-sub">${tw+tl} total drills</div></div>
+      <div class="mc gold"><div class="mc-label">Drill Losses</div><div class="mc-val">${tl}</div></div>
+      <div class="mc"><div class="mc-label">Drill Win %</div><div class="mc-val">${wp!==null?wp.toFixed(1)+'%':'—'}</div></div>
+    </div>
+    <div class="sec-label">Season Stats <span class="cum-tag">all cumulative</span></div>
+    <div class="metrics-grid">
+      <div class="mc"><div class="mc-label">eFG%</div><div class="mc-val">${efg!==null?fmt(efg)+'%':'—'}</div><div class="formula-note">${tFgm} FGM + 0.5×${tTpm} 3PM / ${tFga} FGA</div></div>
+      <div class="mc gold"><div class="mc-label">AST / TO Ratio</div><div class="mc-val">${astto!==null?fmt(astto):'—'}</div><div class="formula-note">${tAst} AST ÷ ${tTov} TO</div></div>
+      <div class="mc"><div class="mc-label">Reb Chances %</div><div class="mc-val">${reb!==null?fmt(reb)+'%':'—'}</div><div class="formula-note">${tRM} / ${tRT}</div></div>
+      <div class="mc gold"><div class="mc-label">Sprints %</div><div class="mc-val">${spr!==null?fmt(spr)+'%':'—'}</div><div class="formula-note">${tSM} / ${tST}</div></div>
+      ${DRIBBLE.has(p.name)?`<div class="mc"><div class="mc-label">2+ Dribble FG%</div><div class="mc-val">${drib!==null?fmt(drib)+'%':'—'}</div><div class="formula-note">${tDM} FGM / ${tDA} FGA</div></div>`:''}
+      ${POTAST.has(p.name)?`<div class="mc gold"><div class="mc-label">Pot. AST Ratio</div><div class="mc-val">${pot!==null?fmt(pot):'—'}</div><div class="formula-note">${tPA} pot ÷ ${tPAA} actual AST</div></div>`:''}
+    </div>
+    ${s.length>=2?`<div class="two-col">
+      <div class="card" style="margin-bottom:0"><div class="card-title">eFG% by session</div><div class="chart-wrap" style="height:155px"><canvas id="efgChart"></canvas></div></div>
+      <div class="card" style="margin-bottom:0"><div class="card-title">Drill W/L by session</div><div class="chart-wrap" style="height:155px"><canvas id="drillChart"></canvas></div></div>
+    </div>`:''}
+    <div class="card">
+      <div class="card-title"><span>Session Log</span>
+        <button class="btn btn-primary" onclick="openLog('practice')">+ Log Session</button>
+      </div>
+      ${s.length?`<div class="tbl-wrap"><table>
+        <thead><tr><th>Date</th><th>Drill W</th><th>Drill L</th><th>FGM</th><th>FGA</th><th>3PM</th><th>AST</th><th>TO</th><th>Reb</th><th>Reb opp</th><th>Spr</th><th>Spr opp</th>${DRIBBLE.has(p.name)?'<th>Drib FGM</th><th>Drib FGA</th>':''}${POTAST.has(p.name)?'<th>Pot AST</th><th>Act AST</th>':''}<th></th></tr></thead>
+        <tbody>${sWithIdx.map(x=>`<tr>
+          <td>${x.date}</td>
+          <td><span class="badge b-purple">${parseInt(x.drillW)||0}</span></td>
+          <td><span class="badge b-amber">${parseInt(x.drillL)||0}</span></td>
+          <td>${parseInt(x.fgm)||0}</td><td>${parseInt(x.fga)||0}</td><td>${parseInt(x.tpm)||0}</td>
+          <td>${parseInt(x.ast)||0}</td><td>${parseInt(x.tov)||0}</td>
+          <td>${parseInt(x.rebMade)||0}</td><td>${parseInt(x.rebTotal)||0}</td>
+          <td>${parseInt(x.sprMade)||0}</td><td>${parseInt(x.sprTotal)||0}</td>
+          ${DRIBBLE.has(p.name)?`<td>${parseInt(x.dribFgm)||0}</td><td>${parseInt(x.dribFga)||0}</td>`:''}
+          ${POTAST.has(p.name)?`<td>${parseInt(x.potAst)||0}</td><td>${parseInt(x.potActAst)||0}</td>`:''}
+          <td><button class="btn btn-danger" onclick="promptDelete('practice',${x._i},'${x.date}')">Remove</button></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`:`<div class="empty"><span class="empty-icon">📋</span>${ST.sheetId?'No sessions found for this player in the sheet.':'Log a session manually, or connect Google Sheets to load data automatically.'}</div>`}
+    </div>`;
+
+  if(s.length>=2){
+    const labels=s.map(x=>x.date.slice(5));
+    const efgVals=s.map(x=>{const v=dailyEfg(x);return v!==null?+v.toFixed(1):null;});
+    setTimeout(()=>{
+      drawLine('efgChart',labels,efgVals,p.color.ch,'eFG%','%');
+      drawBars('drillChart',labels,s.map(x=>parseInt(x.drillW)||0),s.map(x=>parseInt(x.drillL)||0));
+    },50);
+  }
+}
+
+// ── Games ───────────────────────────────────────────────────────────────────
+function renderGames(){
+  const p=cur(),g=p.games;
+  const avgPts=g.length?sumF(g,x=>x.pts)/g.length:null;
+  const tFgm=sumF(g,x=>x.fgm),tFga=sumF(g,x=>x.fga);
+  const fgPct=tFga?tFgm/tFga*100:null;
+  const avgMin=g.length?sumF(g,x=>x.min)/g.length:null;
+  const gW=g.filter(x=>x.result==='W').length;
+  const gWithIdx=g.map((x,i)=>({...x,_i:i})).reverse();
+
+  document.getElementById('mainContent').innerHTML=`
+    <div class="game-banner">🏀 Game season starts in November — log games here when the season tips off.</div>
+    <div class="sec-label">Game Stats · ${g.length} game${g.length!==1?'s':''}</div>
+    <div class="metrics-grid">
+      <div class="mc"><div class="mc-label">Points / game</div><div class="mc-val">${avgPts!==null?fmt(avgPts):'—'}</div></div>
+      <div class="mc gold"><div class="mc-label">FG% <span class="cum-tag">cumulative</span></div><div class="mc-val">${fgPct!==null?fmt(fgPct)+'%':'—'}</div><div class="formula-note">${tFgm}/${tFga}</div></div>
+      <div class="mc"><div class="mc-label">Min / game</div><div class="mc-val">${avgMin!==null?fmt(avgMin):'—'}</div></div>
+      <div class="mc gold"><div class="mc-label">W – L</div><div class="mc-val">${gW} – ${g.length-gW}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Game Log</span>
+        <button class="btn btn-primary" onclick="openLog('game')">+ Log Game</button>
+      </div>
+      ${g.length?`<div class="tbl-wrap"><table>
+        <thead><tr><th>Date</th><th>Opponent</th><th>Result</th><th>Min</th><th>PTS</th><th>FG</th><th>FG%</th><th>3PT%</th><th>REB</th><th>AST</th><th></th></tr></thead>
+        <tbody>${gWithIdx.map(x=>`<tr>
+          <td>${x.date}</td><td>${x.opp}</td>
+          <td><span class="badge ${x.result==='W'?'b-green':'b-red'}">${x.result}</span></td>
+          <td>${fmt(x.min,0)}</td><td style="font-weight:600">${fmt(x.pts,0)}</td>
+          <td>${parseInt(x.fgm)||0}/${parseInt(x.fga)||0}</td>
+          <td>${x.fga?fmt(x.fgm/x.fga*100)+'%':'—'}</td>
+          <td>${x.tpa?fmt(x.tpm/x.tpa*100)+'%':'—'}</td>
+          <td>${fmt(x.reb,0)}</td><td>${fmt(x.ast,0)}</td>
+          <td><button class="btn btn-danger" onclick="promptDelete('game',${x._i},'${x.date} vs ${x.opp}')">Remove</button></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`:`<div class="empty"><span class="empty-icon">🏀</span>No games logged yet. Season starts in November!</div>`}
+    </div>`;
+}
+
+// ── Overview ─────────────────────────────────────────────────────────────────
+function renderOverview(){
+  const p=cur(),s=p.practice;
+  const tw=totalDW(p),tl=totalDL(p),wp=dwPct(p);
+  const efg=calcEfg(s),astto=calcAstTo(s),reb=calcReb(s),spr=calcSpr(s);
+  const drib=DRIBBLE.has(p.name)?calcDrib(s):null;
+  const pot=POTAST.has(p.name)?calcPot(s):null;
+  document.getElementById('mainContent').innerHTML=`
+    <div class="sec-label">Season Overview <span class="cum-tag">all stats cumulative</span></div>
+    <div class="metrics-grid">
+      <div class="mc"><div class="mc-label">Drill Wins</div><div class="mc-val" style="color:#46166B">${tw}</div></div>
+      <div class="mc gold"><div class="mc-label">Drill Losses</div><div class="mc-val">${tl}</div></div>
+      <div class="mc"><div class="mc-label">Drill Win %</div><div class="mc-val">${wp!==null?wp.toFixed(1)+'%':'—'}</div></div>
+      <div class="mc gold"><div class="mc-label">Sessions</div><div class="mc-val">${s.length}</div></div>
+      <div class="mc"><div class="mc-label">Games</div><div class="mc-val">${p.games.length}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Season Stats</div>
+      ${s.length?`
+        ${sbar('eFG%',efg,100,'#46166B','%')}
+        ${sbar('AST/TO Ratio',astto!==null?Math.min(astto*20,100):null,100,'#EAAA00','',astto!==null?fmt(astto):null)}
+        ${sbar('Reb Chances %',reb,100,'#46166B','%')}
+        ${sbar('Sprints %',spr,100,'#EAAA00','%')}
+        ${DRIBBLE.has(p.name)?sbar('2+ Dribble FG%',drib,100,'#6B3A9E','%'):''}
+        ${POTAST.has(p.name)?sbar('Pot. AST Ratio',pot!==null?Math.min(pot/5*100,100):null,100,'#C9900A','',pot!==null?fmt(pot):null):''}
+      `:`<div class="empty">No practice data yet.</div>`}
+    </div>
+    ${s.length>=2?`<div class="two-col">
+      <div class="card" style="margin-bottom:0"><div class="card-title">eFG% by session</div><div class="chart-wrap" style="height:150px"><canvas id="ovEfg"></canvas></div></div>
+      <div class="card" style="margin-bottom:0"><div class="card-title">Drill W/L by session</div><div class="chart-wrap" style="height:150px"><canvas id="ovDrill"></canvas></div></div>
+    </div>`:''}`;
+  if(s.length>=2){
+    const labels=s.map(x=>x.date.slice(5));
+    const efgVals=s.map(x=>{const v=dailyEfg(x);return v!==null?+v.toFixed(1):null;});
+    setTimeout(()=>{
+      drawLine('ovEfg',labels,efgVals,p.color.ch,'eFG%','%');
+      drawBars('ovDrill',labels,s.map(x=>parseInt(x.drillW)||0),s.map(x=>parseInt(x.drillL)||0));
+    },50);
+  }
+}
+
+function sbar(label,pv,max,color,suffix,over){
+  const w=pv!==null&&pv!==undefined?Math.min(Math.round((parseFloat(pv)||0)/max*100),100):0;
+  const d=over!==undefined?over:(pv!==null&&pv!==undefined?fmt(pv)+suffix:'—');
+  return`<div class="sbar-row"><span class="sbar-lbl">${label}</span><div class="sbar-bg"><div class="sbar-fill" style="width:${w}%;background:${color}"></div></div><span class="sbar-val">${d}</span></div>`;
+}
+
+// ── Charts ───────────────────────────────────────────────────────────────────
+function drawLine(id,labels,data,color,label,suffix){
+  const ctx=document.getElementById(id);if(!ctx)return;
+  ST.charts[id]=new Chart(ctx,{type:'line',data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'22',tension:0.35,pointRadius:4,pointBackgroundColor:color,fill:true,spanGaps:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v+suffix,font:{size:10}},grid:{color:'rgba(0,0,0,0.05)'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
+}
+function drawBars(id,labels,wins,losses){
+  const ctx=document.getElementById(id);if(!ctx)return;
+  ST.charts[id]=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Wins',data:wins,backgroundColor:'#46166BAA',borderRadius:4},{label:'Losses',data:losses,backgroundColor:'#EAAA00AA',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10,usePointStyle:true}}},scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(0,0,0,0.05)'}}}}});
+}
+
+// ── Log modal ─────────────────────────────────────────────────────────────────
+let drillW=0,drillL=0;
+function openLog(type){
+  const p=cur();drillW=0;drillL=0;
+  const today=new Date().toISOString().slice(0,10);
+  const ip=type==='practice';
+  document.getElementById('logModalInner').innerHTML=`
+    <div class="modal-title">Log ${ip?'Practice Session':'Game'} — ${p.name}</div>
+    <div style="margin-bottom:14px">
+      <label class="field-label">Date</label>
+      <input type="date" id="lDate" value="${today}" style="width:200px">
+    </div>
+    ${ip?`
+    <div class="form-sec">Drill Results</div>
+    <div style="display:flex;gap:28px;align-items:center;margin-bottom:14px">
+      <div><div class="field-label">Drills won</div>
+        <div class="stepper"><button class="stepper-btn" onclick="adj('w',-1)">−</button><span class="stepper-val" id="dWV" style="color:#46166B">0</span><button class="stepper-btn" onclick="adj('w',1)">+</button></div></div>
+      <div><div class="field-label">Drills lost</div>
+        <div class="stepper"><button class="stepper-btn" onclick="adj('l',-1)">−</button><span class="stepper-val" id="dLV" style="color:#C9900A">0</span><button class="stepper-btn" onclick="adj('l',1)">+</button></div></div>
+      <div id="dSumm" style="font-size:11px;color:#888;align-self:flex-end;padding-bottom:4px"></div>
+    </div>
+    <div class="form-sec">Shooting</div>
+    <div class="form-grid three">
+      <div><label class="field-label">FG Made</label><input type="number" id="lFgm" min="0" placeholder="0"></div>
+      <div><label class="field-label">FG Att</label><input type="number" id="lFga" min="0" placeholder="0"></div>
+      <div><label class="field-label">3PM</label><input type="number" id="lTpm" min="0" placeholder="0"></div>
+    </div>
+    <div class="form-sec">Playmaking</div>
+    <div class="form-grid">
+      <div><label class="field-label">Assists</label><input type="number" id="lAst" min="0" placeholder="0"></div>
+      <div><label class="field-label">Turnovers</label><input type="number" id="lTov" min="0" placeholder="0"></div>
+    </div>
+    <div class="form-sec">Rebounding</div>
+    <div class="form-grid">
+      <div><label class="field-label">Rebounds secured</label><input type="number" id="lRebMade" min="0" placeholder="0"></div>
+      <div><label class="field-label">Rebound opportunities</label><input type="number" id="lRebTotal" min="0" placeholder="0"></div>
+    </div>
+    <div class="form-sec">Sprints</div>
+    <div class="form-grid">
+      <div><label class="field-label">Sprints completed</label><input type="number" id="lSprMade" min="0" placeholder="0"></div>
+      <div><label class="field-label">Total sprints</label><input type="number" id="lSprTotal" min="0" placeholder="0"></div>
+    </div>
+    ${DRIBBLE.has(p.name)?`<div class="form-sec">2+ Dribble FG%</div>
+    <div class="form-grid">
+      <div><label class="field-label">2+ Drib FG Made</label><input type="number" id="lDribFgm" min="0" placeholder="0"></div>
+      <div><label class="field-label">2+ Drib FG Att</label><input type="number" id="lDribFga" min="0" placeholder="0"></div>
+    </div>`:''}
+    ${POTAST.has(p.name)?`<div class="form-sec">Potential Assists</div>
+    <div class="form-grid">
+      <div><label class="field-label">Potential assists</label><input type="number" id="lPotAst" min="0" placeholder="0"></div>
+      <div><label class="field-label">Actual assists</label><input type="number" id="lPotActAst" min="0" placeholder="0"></div>
+    </div>`:''}
+    `:`
+    <div class="form-sec">Game Info</div>
+    <div class="form-grid">
+      <div><label class="field-label">Opponent</label><input type="text" id="lOpp" placeholder="e.g. Vermont"></div>
+      <div><label class="field-label">Result</label><select id="lResult"><option value="W">Win</option><option value="L">Loss</option></select></div>
+      <div><label class="field-label">Minutes</label><input type="number" id="lMin" min="0" max="40" placeholder="0"></div>
+      <div><label class="field-label">Points</label><input type="number" id="lPts" min="0" placeholder="0"></div>
+    </div>
+    <div class="form-sec">Shooting</div>
+    <div class="form-grid">
+      <div><label class="field-label">FG Made</label><input type="number" id="lFgm" min="0" placeholder="0"></div>
+      <div><label class="field-label">FG Att</label><input type="number" id="lFga" min="0" placeholder="0"></div>
+      <div><label class="field-label">3PM</label><input type="number" id="lTpm" min="0" placeholder="0"></div>
+      <div><label class="field-label">3PA</label><input type="number" id="lTpa" min="0" placeholder="0"></div>
+      <div><label class="field-label">FT Made</label><input type="number" id="lFtm" min="0" placeholder="0"></div>
+      <div><label class="field-label">FT Att</label><input type="number" id="lFta" min="0" placeholder="0"></div>
+    </div>
+    <div class="form-sec">Other</div>
+    <div class="form-grid">
+      <div><label class="field-label">Rebounds</label><input type="number" id="lReb" min="0" placeholder="0"></div>
+      <div><label class="field-label">Assists</label><input type="number" id="lAst" min="0" placeholder="0"></div>
+    </div>`}
+    <div class="modal-footer">
+      <button class="btn" onclick="closeLog()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveLog('${type}')">Save</button>
+    </div>`;
+  document.getElementById('logModal').style.display='flex';
+}
+function adj(side,delta){
+  if(side==='w')drillW=Math.max(0,drillW+delta);else drillL=Math.max(0,drillL+delta);
+  document.getElementById('dWV').textContent=drillW;
+  document.getElementById('dLV').textContent=drillL;
+  const t=drillW+drillL,el=document.getElementById('dSumm');
+  if(el)el.textContent=t>0?`${t} drills · ${((drillW/t)*100).toFixed(0)}% win rate`:'';
+}
+function closeLog(){document.getElementById('logModal').style.display='none';}
+const gv=id=>{const e=document.getElementById(id);return e?e.value:'';};
+const gn=id=>parseFloat(gv(id))||0;
+const gi=id=>parseInt(gv(id))||0;
+function saveLog(type){
+  const p=cur();
+  if(type==='practice'){
+    const row={date:gv('lDate')||new Date().toISOString().slice(0,10),drillW,drillL,fgm:gn('lFgm'),fga:gn('lFga'),tpm:gn('lTpm'),ast:gi('lAst'),tov:gi('lTov'),rebMade:gi('lRebMade'),rebTotal:gi('lRebTotal'),sprMade:gi('lSprMade'),sprTotal:gi('lSprTotal'),dribFgm:0,dribFga:0,potAst:0,potActAst:0};
+    if(DRIBBLE.has(p.name)){row.dribFgm=gi('lDribFgm');row.dribFga=gi('lDribFga');}
+    if(POTAST.has(p.name)){row.potAst=gi('lPotAst');row.potActAst=gi('lPotActAst');}
+    p.practice.push(row);
+  } else {
+    p.games.push({date:gv('lDate'),opp:gv('lOpp')||'Unknown',result:gv('lResult'),min:gn('lMin'),pts:gn('lPts'),fgm:gn('lFgm'),fga:gn('lFga'),tpm:gn('lTpm'),tpa:gn('lTpa'),ftm:gn('lFtm'),fta:gn('lFta'),reb:gn('lReb'),ast:gn('lAst')});
+  }
+  closeLog();destroyCharts();renderSidebar();renderHeader();renderContent();
+}
+
+// ── Google Sheets ─────────────────────────────────────────────────────────────
+function openGsModal(){document.getElementById('gsModal').style.display='flex';}
+function closeGsModal(){document.getElementById('gsModal').style.display='none';}
+function extractId(url){const m=url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);return m?m[1]:null;}
+async function connectSheet(){
+  const url=document.getElementById('gsUrlInput').value.trim();
+  const errEl=document.getElementById('gsErrMsg');errEl.style.display='none';
+  const id=extractId(url);
+  if(!id){errEl.textContent='Could not find a Sheet ID in that URL.';errEl.style.display='block';return;}
+  ST.sheetId=id;
+  document.getElementById('gsDot').classList.add('on');
+  document.getElementById('gsLabel').textContent='Loading all players...';
+  closeGsModal();
+  const results=await Promise.all(ST.players.map(p=>loadPlayer(p)));
+  const loaded=ST.players.filter(p=>p.practice.length>0||p.games.length>0).length;
+  document.getElementById('gsLabel').textContent=`Sheet connected ✓ (${loaded}/15 players loaded)`;
+  const btn=document.getElementById('refreshBtn');
+  if(btn) btn.style.display='flex';
+  if(loaded===0){ showDebugPanel(); }
+  renderSidebar();renderHeader();renderContent();
+  startAutoRefresh();
+}
+
+async function loadPlayer(player){
+  if(!ST.sheetId)return{player,status:'no sheet'};
+  const tab=TAB[player.name];
+  const url=`https://docs.google.com/spreadsheets/d/${ST.sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
+  try{
+    const res=await fetch(url);
+    if(!res.ok){
+      ST.debugLog=ST.debugLog||[];
+      ST.debugLog.push({player:player.name,tab,status:res.status,error:`HTTP ${res.status}`});
+      return{player,status:'http error',code:res.status};
+    }
+    const text=await res.text();
+    // Check if Google returned an error page instead of CSV
+    if(text.includes('Viewing this content requires signing in') || text.includes('google.com/accounts')){
+      ST.debugLog=ST.debugLog||[];
+      ST.debugLog.push({player:player.name,tab,status:'auth',error:'Sheet requires sign-in — not shared publicly'});
+      return{player,status:'auth error'};
+    }
+    const rowsBefore=player.practice.length;
+    parseSheet(player,text);
+    ST.debugLog=ST.debugLog||[];
+    ST.debugLog.push({player:player.name,tab,status:'ok',rows:player.practice.length,rawPreview:text.slice(0,200)});
+    return{player,status:'ok',rows:player.practice.length};
+  }catch(e){
+    ST.debugLog=ST.debugLog||[];
+    ST.debugLog.push({player:player.name,tab,status:'error',error:e.message});
+    return{player,status:'error',error:e.message};
+  }
+}
+
+async function showDebugPanel(){
+  // Always fetch raw data from the first player tab immediately
+  const p=ST.players[0];
+  const tab=TAB[p.name];
+  const url=`https://docs.google.com/spreadsheets/d/${ST.sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
+
+  let rawText='Fetching...';
+  let statusMsg='';
+  let httpStatus='';
+
+  try{
+    const res=await fetch(url);
+    httpStatus=res.status;
+    rawText=await res.text();
+    if(rawText.includes('accounts.google.com')||rawText.includes('signin')){
+      statusMsg='<span style="color:#C62828">⚠ Google is asking for sign-in — sheet may not be shared publicly.</span>';
+    } else if(rawText.includes('error')||rawText.length<10){
+      statusMsg='<span style="color:#C62828">⚠ Unexpected response from Google.</span>';
+    } else {
+      statusMsg='<span style="color:#2E7D32">✓ Sheet reached successfully (HTTP '+httpStatus+')</span>';
+    }
+  } catch(e){
+    rawText='Fetch failed: '+e.message;
+    statusMsg='<span style="color:#C62828">⚠ Network error: '+e.message+'</span>';
+  }
+
+  // Remove any existing panel
+  document.querySelectorAll('.debug-panel').forEach(el=>el.remove());
+
+  const panel=document.createElement('div');
+  panel.className='debug-panel';
+  panel.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:flex;align-items:center;justify-content:center';
+  panel.innerHTML=`
+    <div style="background:#fff;border-radius:12px;padding:24px;width:600px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <strong style="font-size:14px">🔍 Raw Sheet Data — ${tab}</strong>
+        <button onclick="this.closest('.debug-panel').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#888;line-height:1">×</button>
+      </div>
+      <div style="font-size:12px;margin-bottom:8px">${statusMsg}</div>
+      <div style="font-size:11px;color:#555;margin-bottom:4px">HTTP status: <strong>${httpStatus}</strong> &nbsp;|&nbsp; Response length: <strong>${rawText.length} chars</strong></div>
+      <div style="font-size:11px;color:#555;margin-bottom:10px">Sheet ID: <code style="background:#f5f5f5;padding:1px 4px;border-radius:3px">${ST.sheetId}</code></div>
+      <div style="font-size:11px;font-weight:600;margin-bottom:6px;color:#46166B">Raw response (first 2000 characters) — copy and paste this to Claude:</div>
+      <pre id="rawOutput" style="font-size:10px;background:#f5f5f5;padding:12px;border-radius:6px;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto;border:1px solid #e0e0e0">${rawText.slice(0,2000).replace(/</g,'&lt;')}</pre>
+      <button onclick="navigator.clipboard.writeText(document.getElementById('rawOutput').innerText).then(()=>alert('Copied!'))" style="margin-top:10px;padding:7px 16px;background:#46166B;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;width:100%">📋 Copy raw data to clipboard</button>
+    </div>`;
+  document.body.appendChild(panel);
+}
+
+async function runDeepDebug(){
+  await showDebugPanel();
+}
+function parseCSV(text){
+  const rows=[];let cur='';let inQ=false;let row=[];
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(ch==='"'){inQ=!inQ;}
+    else if(ch===','&&!inQ){row.push(cur.replace(/^"|"$/g,'').trim());cur='';}
+    else if((ch==='\n'||ch==='\r')&&!inQ){if(cur||row.length){row.push(cur.replace(/^"|"$/g,'').trim());rows.push(row);row=[];cur='';}}
+    else cur+=ch;
+  }
+  if(cur||row.length){row.push(cur.replace(/^"|"$/g,'').trim());rows.push(row);}
+  return rows;
+}
+function parseSheet(player,csvText){
+  const rows=parseCSV(csvText);
+  if(rows.length<2)return;
+
+  // Find header row — look for any row containing known column names
+  // Works whether or not there's a Date column
+  let hdr=-1;
+  const knownCols=['drill wins','drill losses','fg made','fg att','3pm','assists','sprints'];
+  for(let i=0;i<Math.min(rows.length,6);i++){
+    const rowLower=rows[i].map(c=>c.toLowerCase());
+    const matches=knownCols.filter(k=>rowLower.some(c=>c.includes(k)));
+    if(matches.length>=2){hdr=i;break;}
+  }
+  // Fallback: also try finding by 'date'
+  if(hdr<0){
+    for(let i=0;i<Math.min(rows.length,6);i++){
+      if(rows[i].some(c=>c.toLowerCase().includes('date'))){hdr=i;break;}
+    }
+  }
+  if(hdr<0)return;
+
+  const h=rows[hdr].map(x=>x.toLowerCase().replace(/[\n\r]/g,' ').replace(/['"]/g,'').trim());
+  const c=(...t)=>{for(const s of t){const i=h.findIndex(x=>x.includes(s));if(i>=0)return i;}return -1;};
+
+  // Date column is optional — if missing, use row number as date label
+  const dateC=c('date');
+  const dwC=c('drill wins','drill win');
+  const dlC=c('drill losses','drill loss');
+  const fgmC=c('fg made');
+  const fgaC=c('fg att');
+  const tpmC=c('3pm');
+  const astC=c('assists');
+  const tovC=c('turnover');
+  const rmC=c('reb made');
+  const rtC=c('reb opps','reb chance');
+  const smC=c('sprints made','sprint made');
+  const stC=c('sprints total','sprint total');
+  const d1C=c('2+ drib fgm','drib fgm','dribble fgm');
+  const d2C=c('2+ drib fga','drib fga','dribble fga');
+  const p1C=c('potential assists','pot. ast made','pot ast');
+  const p2C=c('actual assists','act ast');
+
+  player.practice=[];player.games=[];
+  let sessionNum=1;
+  for(let i=hdr+1;i<rows.length;i++){
+    const r=rows[i];
+    // Skip completely empty rows
+    if(r.every(c=>!c||c.trim()===''))continue;
+    // Need at least one numeric stat to be a valid row
+    const hasData=r.some((c,ci)=>ci>0&&parseFloat(c)>0);
+    if(!hasData)continue;
+
+    const date=dateC>=0&&r[dateC]&&r[dateC].trim()!==''?r[dateC].trim():`Session ${sessionNum}`;
+    sessionNum++;
+
+    player.practice.push({
+      date,
+      drillW:dwC>=0?parseInt(r[dwC])||0:0,
+      drillL:dlC>=0?parseInt(r[dlC])||0:0,
+      fgm:fgmC>=0?parseFloat(r[fgmC])||0:0,
+      fga:fgaC>=0?parseFloat(r[fgaC])||0:0,
+      tpm:tpmC>=0?parseFloat(r[tpmC])||0:0,
+      ast:astC>=0?parseInt(r[astC])||0:0,
+      tov:tovC>=0?parseInt(r[tovC])||0:0,
+      rebMade:rmC>=0?parseInt(r[rmC])||0:0,
+      rebTotal:rtC>=0?parseInt(r[rtC])||0:0,
+      sprMade:smC>=0?parseInt(r[smC])||0:0,
+      sprTotal:stC>=0?parseInt(r[stC])||0:0,
+      dribFgm:d1C>=0?parseInt(r[d1C])||0:0,
+      dribFga:d2C>=0?parseInt(r[d2C])||0:0,
+      potAst:p1C>=0?parseInt(r[p1C])||0:0,
+      potActAst:p2C>=0?parseInt(r[p2C])||0:0,
+    });
+  }
+}
+
+
+// ── Auto-refresh ──────────────────────────────────────────────────────────────
+let refreshTimer=null;
+let countdownTimer=null;
+let secondsLeft=30;
+const REFRESH_INTERVAL=30;
+
+function startAutoRefresh(){
+  stopAutoRefresh();
+  secondsLeft=REFRESH_INTERVAL;
+  updateCountdown();
+  countdownTimer=setInterval(()=>{
+    secondsLeft--;
+    updateCountdown();
+    if(secondsLeft<=0){
+      secondsLeft=REFRESH_INTERVAL;
+      doRefresh();
+    }
+  },1000);
+}
+
+function stopAutoRefresh(){
+  if(countdownTimer) clearInterval(countdownTimer);
+  if(refreshTimer) clearTimeout(refreshTimer);
+  countdownTimer=null;refreshTimer=null;
+}
+
+function updateCountdown(){
+  const el=document.getElementById('countdown');
+  if(el) el.textContent=`Auto in ${secondsLeft}s`;
+}
+
+async function doRefresh(){
+  if(!ST.sheetId) return;
+  const btn=document.getElementById('refreshBtn');
+  const icon=document.getElementById('refreshIcon');
+  const lbl=document.getElementById('refreshLabel');
+  if(btn) btn.classList.add('spinning');
+  if(lbl) lbl.textContent='Refreshing...';
+  await Promise.all(ST.players.map(p=>loadPlayer(p)));
+  destroyCharts();
+  renderSidebar();
+  renderHeader();
+  renderContent();
+  if(ST.sidebarView==='leaderboard') renderLeaderboardSidebar();
+  if(btn) btn.classList.remove('spinning');
+  if(lbl) lbl.textContent='Refresh data';
+  secondsLeft=REFRESH_INTERVAL;
+  updateCountdown();
+}
+
+async function manualRefresh(){
+  secondsLeft=REFRESH_INTERVAL;
+  await doRefresh();
+}
+
+// Show refresh button and start auto-refresh after sheet connects
+const _origConnectSheet=connectSheet;
+connectSheet=async function(){
+  await _origConnectSheet.call(this,...arguments);
+  if(ST.sheetId){
+    const btn=document.getElementById('refreshBtn');
+    if(btn) btn.style.display='flex';
+    startAutoRefresh();
+  }
+};
+
+// ── Modal close on backdrop ──────────────────────────────────────────────────
+['gsModal','logModal','confirmModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))document.getElementById(id).style.display='none';});
+});
+
+renderSidebar();renderHeader();renderContent();
+</script>
+</body>
+</html>
