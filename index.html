@@ -158,7 +158,7 @@ input:focus,select:focus{border-color:var(--purple)}
   <div class="content" id="mainContent"></div>
 </div>
 </div>
-
+ 
 <div class="modal-bg" id="gsModal">
 <div class="modal-box" style="width:460px">
   <div class="modal-title">Connect Google Sheets</div>
@@ -177,11 +177,11 @@ input:focus,select:focus{border-color:var(--purple)}
   </div>
 </div>
 </div>
-
+ 
 <div class="modal-bg" id="logModal">
 <div class="modal-box" id="logModalInner"></div>
 </div>
-
+ 
 <div class="modal-bg" id="confirmModal">
 <div class="modal-box" style="width:360px">
   <div class="modal-title">Remove session?</div>
@@ -192,7 +192,7 @@ input:focus,select:focus{border-color:var(--purple)}
   </div>
 </div>
 </div>
-
+ 
 <script>
 const PALETTE=[
   {bg:'#EDE5F5',txt:'#46166B',ch:'#46166B'},
@@ -205,29 +205,28 @@ const PALETTE=[
 ];
 const NAMES=['Erwann Bussing','Ollie Engen','Abdoulaye Fall','U-Mier Graham','Tyler Jones','Papa Kounta','Zacharie Matulu','Ben Michaels','Petar Miovic','Moustapha Ndao','Wilkin Paulino','Miles Rose','Pedro Santos','Callum Smith','Kean Webb'];
 const TAB={'Erwann Bussing':'E. Bussing','Ollie Engen':'O. Engen','Abdoulaye Fall':'A. Fall','U-Mier Graham':'U. Graham','Tyler Jones':'T. Jones','Papa Kounta':'P. Kounta','Zacharie Matulu':'Z. Matulu','Ben Michaels':'B. Michaels','Petar Miovic':'P. Miovic','Moustapha Ndao':'M. Ndao','Wilkin Paulino':'W. Paulino','Miles Rose':'M. Rose','Pedro Santos':'P. Santos','Callum Smith':'C. Smith','Kean Webb':'K. Webb'};
-
+ 
 const ST={
   players:NAMES.map((n,i)=>({name:n,color:PALETTE[i%PALETTE.length],practice:[],games:[]})),
   selected:0,tab:'practice',charts:{},sheetId:null,sidebarView:'roster'
 };
-
+ 
 const ini=n=>n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
 const cur=()=>ST.players[ST.selected];
 const sumF=(arr,fn)=>arr.reduce((s,x)=>s+(parseFloat(fn(x))||0),0);
 const fmt=(v,d=1)=>(v===null||v===undefined||isNaN(v)||!isFinite(v))?'—':parseFloat(v).toFixed(d);
-
+ 
 const calcEfg=s=>{const m=sumF(s,x=>x.fgm),a=sumF(s,x=>x.fga),t=sumF(s,x=>x.tpm);return a>0?(m+0.5*t)/a*100:null;};
 const calcAstTo=s=>{const a=sumF(s,x=>x.ast),t=sumF(s,x=>x.tov);return t>0?a/t:null;};
 const calcReb=s=>{const m=sumF(s,x=>x.rebMade),t=sumF(s,x=>x.rebTotal);return t>0?m/t*100:null;};
 const calcSpr=s=>{const m=sumF(s,x=>x.sprMade),t=sumF(s,x=>x.sprTotal);return t>0?m/t*100:null;};
 const calcDrib=s=>{const m=sumF(s,x=>x.dribFgm),t=sumF(s,x=>x.dribFga);return t>0?m/t*100:null;};
-const calc
-Pot=s=>{const p=sumF(s,x=>x.potAst),a=sumF(s,x=>x.potActAst);return a>0?p/a:null;};
+const calcPot=s=>{const p=sumF(s,x=>x.potAst),a=sumF(s,x=>x.potActAst);return a>0?p/a:null;};
 const totalDW=p=>sumF(p.practice,s=>s.drillW);
 const totalDL=p=>sumF(p.practice,s=>s.drillL);
 const dwPct=p=>{const w=totalDW(p),l=totalDL(p),t=w+l;return t?w/t*100:null;};
 const dailyEfg=s=>{const a=parseFloat(s.fga)||0;return a?((parseFloat(s.fgm)||0)+0.5*(parseFloat(s.tpm)||0))/a*100:null;};
-
+ 
 function renderSidebar(){
   document.getElementById('playerList').innerHTML=ST.players.map((p,i)=>{
     const wp=dwPct(p);
@@ -236,7 +235,7 @@ function renderSidebar(){
       <div><div class="pname">${p.name}</div>${wp!==null?`<div class="psub">Drill W% ${wp.toFixed(1)}%</div>`:''}</div>
     </div>`;}).join('');
 }
-
+ 
 function renderHeader(){
   const p=cur(),w=totalDW(p),l=totalDL(p),wp=dwPct(p);
   document.getElementById('playerHdr').innerHTML=`
@@ -244,7 +243,7 @@ function renderHeader(){
     <div><div class="pfull">${p.name}</div>
     <div class="pmeta">${p.practice.length} session${p.practice.length!==1?'s':''} &nbsp;·&nbsp; Drill record: <strong>${w}–${l}</strong>${wp!==null?' ('+wp.toFixed(1)+'%)':''} &nbsp;·&nbsp; ${p.games.length} game${p.games.length!==1?'s':''}</div></div>`;
 }
-
+ 
 async function sel(i){
   ST.selected=i;
   destroyCharts();
@@ -256,7 +255,7 @@ async function sel(i){
   }
   renderContent();
 }
-
+ 
 function setSidebarView(view,el){
   ST.sidebarView=view;
   document.querySelectorAll('.snav-btn').forEach(b=>b.classList.remove('active'));
@@ -274,7 +273,7 @@ function setSidebarView(view,el){
     document.getElementById('mainTabBar').style.display='none';
   }
 }
-
+ 
 function renderLeaderboardSidebar(){
   const sorted=[...ST.players].map(p=>({p,wp:dwPct(p)})).sort((a,b)=>{
     if(a.wp===null&&b.wp===null)return 0;
@@ -289,7 +288,7 @@ function renderLeaderboardSidebar(){
       <div><div class="pname">${p.name}</div><div class="psub">${wp!==null?wp.toFixed(1)+'%':'No data'}</div></div>
     </div>`).join('');
 }
-
+ 
 function renderLeaderboardMain(){
   const sorted=[...ST.players].map(p=>({p,wp:dwPct(p),tw:totalDW(p),tl:totalDL(p)})).sort((a,b)=>{
     if(a.wp===null&&b.wp===null)return 0;
@@ -320,14 +319,14 @@ function renderLeaderboardMain(){
     </div>
     <div style="font-size:11px;color:var(--text-ter);margin-top:10px;text-align:center">Click any player to view their full dashboard</div>`;
 }
-
+ 
 function goToPlayer(name){
   const i=ST.players.findIndex(p=>p.name===name);
   if(i<0)return;
   ST.selected=i;
   setSidebarView('roster',document.getElementById('snavRoster'));
 }
-
+ 
 function switchTab(t,el){
   ST.tab=t;destroyCharts();
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
@@ -335,7 +334,7 @@ function switchTab(t,el){
 }
 function destroyCharts(){Object.values(ST.charts).forEach(c=>{try{c.destroy();}catch(e){}});ST.charts={};}
 function renderContent(){if(ST.tab==='practice')renderPractice();else if(ST.tab==='games')renderGames();else renderOverview();}
-
+ 
 let pendingDel={type:null,idx:null};
 function promptDelete(type,idx,label){
   pendingDel={type,idx};
@@ -350,7 +349,7 @@ function confirmDelete(){
   closeConfirm();destroyCharts();renderSidebar();renderHeader();renderContent();
   if(ST.sidebarView==='leaderboard')renderLeaderboardSidebar();
 }
-
+ 
 function renderPractice(){
   const p=cur(),s=p.practice;
   const tw=totalDW(p),tl=totalDL(p),wp=dwPct(p);
@@ -409,7 +408,7 @@ function renderPractice(){
     },60);
   }
 }
-
+ 
 function renderGames(){
   const p=cur(),g=p.games;
   const avgPts=g.length?sumF(g,x=>x.pts)/g.length:null;
@@ -444,7 +443,7 @@ function renderGames(){
       </table></div>`:`<div class="empty">No games logged yet. Season starts in November!</div>`}
     </div>`;
 }
-
+ 
 function renderOverview(){
   const p=cur(),s=p.practice;
   const tw=totalDW(p),tl=totalDL(p),wp=dwPct(p);
@@ -463,8 +462,7 @@ function renderOverview(){
       ${s.length?`
         ${sbar('eFG%',efg,100,'#46166B','%')}
         ${sbar('AST/TO Ratio',astto!==null?Math.min(astto*20,100):null,100,'#EAAA00','',astto!==null?fmt(astto):null)}
-        ${sbar('Reb Chances %',reb,100,'
-#46166B','%')}
+        ${sbar('Reb Chances %',reb,100,'#46166B','%')}
         ${sbar('Sprints %',spr,100,'#EAAA00','%')}
         ${sbar('2+ Dribble FG%',drib,100,'#6B3A9E','%')}
         ${sbar('Pot. AST Ratio',pot!==null?Math.min(pot/5*100,100):null,100,'#C9900A','',pot!==null?fmt(pot):null)}
@@ -483,13 +481,13 @@ function renderOverview(){
     },60);
   }
 }
-
+ 
 function sbar(label,pv,max,color,suffix,over){
   const w=pv!==null&&pv!==undefined?Math.min(Math.round((parseFloat(pv)||0)/max*100),100):0;
   const d=over!==undefined?over:(pv!==null&&pv!==undefined?fmt(pv)+suffix:'—');
   return`<div class="sbar-row"><span class="sbar-lbl">${label}</span><div class="sbar-bg"><div class="sbar-fill" style="width:${w}%;background:${color}"></div></div><span class="sbar-val">${d}</span></div>`;
 }
-
+ 
 function drawLine(id,labels,data,color,label,suffix){
   const ctx=document.getElementById(id);if(!ctx)return;
   ST.charts[id]=new Chart(ctx,{type:'line',data:{labels,datasets:[{label,data,borderColor:color,backgroundColor:color+'22',tension:0.35,pointRadius:4,pointBackgroundColor:color,fill:true,spanGaps:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v+suffix,font:{size:10}},grid:{color:'rgba(0,0,0,0.05)'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
@@ -498,7 +496,7 @@ function drawBars(id,labels,wins,losses){
   const ctx=document.getElementById(id);if(!ctx)return;
   ST.charts[id]=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Wins',data:wins,backgroundColor:'#46166BAA',borderRadius:4},{label:'Losses',data:losses,backgroundColor:'#EAAA00AA',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},boxWidth:10,usePointStyle:true}}},scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}}}}}});
 }
-
+ 
 let drillW=0,drillL=0;
 function openLog(type){
   const p=cur();drillW=0;drillL=0;
@@ -592,11 +590,11 @@ function saveLog(type){
   }
   closeLog();destroyCharts();renderSidebar();renderHeader();renderContent();
 }
-
+ 
 function openGsModal(){document.getElementById('gsModal').style.display='flex';}
 function closeGsModal(){document.getElementById('gsModal').style.display='none';}
 function extractId(url){const m=url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);return m?m[1]:null;}
-
+ 
 async function connectSheet(){
   const url=document.getElementById('gsUrlInput').value.trim();
   const errEl=document.getElementById('gsErr');errEl.style.display='none';
@@ -613,7 +611,7 @@ async function connectSheet(){
   renderSidebar();renderHeader();renderContent();
   startAutoRefresh();
 }
-
+ 
 async function loadPlayer(player){
   if(!ST.sheetId)return;
   const tab=TAB[player.name];
@@ -626,7 +624,7 @@ async function loadPlayer(player){
     parseSheet(player,text);
   }catch(e){console.error('Load error',player.name,e);}
 }
-
+ 
 function parseCSV(text){
   const rows=[];let c='';let inQ=false;let row=[];
   for(let i=0;i<text.length;i++){
@@ -639,7 +637,7 @@ function parseCSV(text){
   if(c||row.length){row.push(c.replace(/^"|"$/g,'').trim());rows.push(row);}
   return rows;
 }
-
+ 
 function parseSheet(player,csvText){
   const rows=parseCSV(csvText);
   if(rows.length<2)return;
@@ -701,7 +699,7 @@ function parseSheet(player,csvText){
     });
   }
 }
-
+ 
 let countdownTimer=null;let secondsLeft=30;
 function startAutoRefresh(){
   if(countdownTimer)clearInterval(countdownTimer);
@@ -727,12 +725,13 @@ async function doRefresh(){
   secondsLeft=30;
 }
 async function manualRefresh(){secondsLeft=30;await doRefresh();}
-
+ 
 ['gsModal','logModal','confirmModal'].forEach(id=>{
   document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))document.getElementById(id).style.display='none';});
 });
-
+ 
 renderSidebar();renderHeader();renderContent();
 </script>
 </body>
 </html>
+ 
