@@ -221,7 +221,8 @@ const calcAstTo=s=>{const a=sumF(s,x=>x.ast),t=sumF(s,x=>x.tov);return t>0?a/t:n
 const calcReb=s=>{const m=sumF(s,x=>x.rebMade),t=sumF(s,x=>x.rebTotal);return t>0?m/t*100:null;};
 const calcSpr=s=>{const m=sumF(s,x=>x.sprMade),t=sumF(s,x=>x.sprTotal);return t>0?m/t*100:null;};
 const calcDrib=s=>{const m=sumF(s,x=>x.dribFgm),t=sumF(s,x=>x.dribFga);return t>0?m/t*100:null;};
-const calcPot=s=>{const p=sumF(s,x=>x.potAst),a=sumF(s,x=>x.potActAst);return a>0?p/a:null;};
+const calc
+  Pot=s=>{const p=sumF(s,x=>x.potAst),a=sumF(s,x=>x.potActAst);return a>0?p/a:null;};
 const totalDW=p=>sumF(p.practice,s=>s.drillW);
 const totalDL=p=>sumF(p.practice,s=>s.drillL);
 const dwPct=p=>{const w=totalDW(p),l=totalDL(p),t=w+l;return t?w/t*100:null;};
