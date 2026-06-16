@@ -644,7 +644,7 @@ function parseSheet(player,csvText){
   let hdr=-1;
   const knownCols=['drill wins','drill losses','fg made','fg att','assists','sprints made'];
   for(let i=0;i<Math.min(rows.length,6);i++){
-    const low=rows[i].map(c=>c.toLowerCase().replace(/"/g,'').trim());
+    const low=rows[i].map(c=>c.toLowerCase().replace(/["\n\r\t]/g,' ').replace(/\s+/g,' ').trim());
     if(knownCols.filter(k=>low.some(c=>c.includes(k))).length>=3){hdr=i;break;}
   }
   if(hdr<0){
@@ -653,7 +653,7 @@ function parseSheet(player,csvText){
     }
   }
   if(hdr<0)return;
-  const h=rows[hdr].map(x=>x.toLowerCase().replace(/["\n\r]/g,'').trim());
+  const h=rows[hdr].map(x=>x.toLowerCase().replace(/["\n\r\t]/g,' ').replace(/\s+/g,' ').trim());
   const c=(...terms)=>{for(const t of terms){const i=h.findIndex(x=>x.includes(t));if(i>=0)return i;}return -1;};
   const dateC=c('date');
   const dwC=c('drill wins','drill win');
