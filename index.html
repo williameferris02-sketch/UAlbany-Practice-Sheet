@@ -356,9 +356,20 @@ function renderHeader(){
     </div>`;
 }
 
-function sel(i){
-  ST.selected=i;destroyCharts();renderSidebar();renderHeader();
-  if(ST.sheetId)loadPlayer(ST.players[i]);else renderContent();
+async async function sel(i){
+  ST.selected=i;
+  destroyCharts();
+  renderSidebar();
+  renderHeader();
+  if(ST.sheetId){
+    document.getElementById('mainContent').innerHTML=`
+      <div style="display:flex;align-items:center;justify-content:center;height:300px;flex-direction:column;gap:12px">
+        <div style="width:32px;height:32px;border:3px solid #EDE5F5;border-top-color:#46166B;border-radius:50%;animation:spin .8s linear infinite"></div>
+        <div style="font-size:13px;color:#888">Loading...</div>
+      </div>`;
+    await loadPlayer(ST.players[i]);
+  }
+  renderContent();
 }
 function switchTab(t,el){
   ST.tab=t;destroyCharts();
@@ -418,8 +429,8 @@ function renderPractice(){
       <div class="mc gold"><div class="mc-label">AST / TO Ratio</div><div class="mc-val">${astto!==null?fmt(astto):'—'}</div><div class="formula-note">${tAst} AST ÷ ${tTov} TO</div></div>
       <div class="mc"><div class="mc-label">Reb Chances %</div><div class="mc-val">${reb!==null?fmt(reb)+'%':'—'}</div><div class="formula-note">${tRM} / ${tRT}</div></div>
       <div class="mc gold"><div class="mc-label">Sprints %</div><div class="mc-val">${spr!==null?fmt(spr)+'%':'—'}</div><div class="formula-note">${tSM} / ${tST}</div></div>
-      ${DRIBBLE.has(p.name)?`<div class="mc"><div class="mc-label">2+ Dribble FG%</div><div class="mc-val">${drib!==null?fmt(drib)+'%':'—'}</div><div class="formula-note">${tDM} FGM / ${tDA} FGA</div></div>`:''}
-      ${POTAST.has(p.name)?`<div class="mc gold"><div class="mc-label">Pot. AST Ratio</div><div class="mc-val">${pot!==null?fmt(pot):'—'}</div><div class="formula-note">${tPA} pot ÷ ${tPAA} actual AST</div></div>`:''}
+      <div class="mc"><div class="mc-label">2+ Dribble FG%</div><div class="mc-val">${drib!==null?fmt(drib)+'%':'—'}</div><div class="formula-note">${tDM} FGM / ${tDA} FGA</div></div>
+      <div class="mc gold"><div class="mc-label">Pot. AST Ratio</div><div class="mc-val">${pot!==null?fmt(pot):'—'}</div><div class="formula-note">${tPA} pot ÷ ${tPAA} actual AST</div></div>
     </div>
     ${s.length>=2?`<div class="two-col">
       <div class="card" style="margin-bottom:0"><div class="card-title">eFG% by session</div><div class="chart-wrap" style="height:155px"><canvas id="efgChart"></canvas></div></div>
@@ -430,7 +441,7 @@ function renderPractice(){
         <button class="btn btn-primary" onclick="openLog('practice')">+ Log Session</button>
       </div>
       ${s.length?`<div class="tbl-wrap"><table>
-        <thead><tr><th>Date</th><th>Drill W</th><th>Drill L</th><th>FGM</th><th>FGA</th><th>3PM</th><th>AST</th><th>TO</th><th>Reb</th><th>Reb opp</th><th>Spr</th><th>Spr opp</th>${DRIBBLE.has(p.name)?'<th>Drib FGM</th><th>Drib FGA</th>':''}${POTAST.has(p.name)?'<th>Pot AST</th><th>Act AST</th>':''}<th></th></tr></thead>
+        <thead><tr><th>Date</th><th>Drill W</th><th>Drill L</th><th>FGM</th><th>FGA</th><th>3PM</th><th>AST</th><th>TO</th><th>Reb</th><th>Reb opp</th><th>Spr</th><th>Spr opp</th><th>Drib FGM</th><th>Drib FGA</th><th>Pot AST</th><th>Act AST</th><th></th></tr></thead>
         <tbody>${sWithIdx.map(x=>`<tr>
           <td>${x.date}</td>
           <td><span class="badge b-purple">${parseInt(x.drillW)||0}</span></td>
@@ -439,8 +450,8 @@ function renderPractice(){
           <td>${parseInt(x.ast)||0}</td><td>${parseInt(x.tov)||0}</td>
           <td>${parseInt(x.rebMade)||0}</td><td>${parseInt(x.rebTotal)||0}</td>
           <td>${parseInt(x.sprMade)||0}</td><td>${parseInt(x.sprTotal)||0}</td>
-          ${DRIBBLE.has(p.name)?`<td>${parseInt(x.dribFgm)||0}</td><td>${parseInt(x.dribFga)||0}</td>`:''}
-          ${POTAST.has(p.name)?`<td>${parseInt(x.potAst)||0}</td><td>${parseInt(x.potActAst)||0}</td>`:''}
+          <td>${parseInt(x.dribFgm)||0}</td><td>${parseInt(x.dribFga)||0}</td>
+          <td>${parseInt(x.potAst)||0}</td><td>${parseInt(x.potActAst)||0}</td>
           <td><button class="btn btn-danger" onclick="promptDelete('practice',${x._i},'${x.date}')">Remove</button></td>
         </tr>`).join('')}</tbody>
       </table></div>`:`<div class="empty"><span class="empty-icon">📋</span>${ST.sheetId?'No sessions found for this player in the sheet.':'Log a session manually, or connect Google Sheets to load data automatically.'}</div>`}
@@ -518,8 +529,8 @@ function renderOverview(){
         ${sbar('AST/TO Ratio',astto!==null?Math.min(astto*20,100):null,100,'#EAAA00','',astto!==null?fmt(astto):null)}
         ${sbar('Reb Chances %',reb,100,'#46166B','%')}
         ${sbar('Sprints %',spr,100,'#EAAA00','%')}
-        ${DRIBBLE.has(p.name)?sbar('2+ Dribble FG%',drib,100,'#6B3A9E','%'):''}
-        ${POTAST.has(p.name)?sbar('Pot. AST Ratio',pot!==null?Math.min(pot/5*100,100):null,100,'#C9900A','',pot!==null?fmt(pot):null):''}
+        ${sbar('2+ Dribble FG%',drib,100,'#6B3A9E','%')}
+        ${sbar('Pot. AST Ratio',pot!==null?Math.min(pot/5*100,100):null,100,'#C9900A','',pot!==null?fmt(pot):null)}
       `:`<div class="empty">No practice data yet.</div>`}
     </div>
     ${s.length>=2?`<div class="two-col">
@@ -594,16 +605,16 @@ function openLog(type){
       <div><label class="field-label">Sprints completed</label><input type="number" id="lSprMade" min="0" placeholder="0"></div>
       <div><label class="field-label">Total sprints</label><input type="number" id="lSprTotal" min="0" placeholder="0"></div>
     </div>
-    ${DRIBBLE.has(p.name)?`<div class="form-sec">2+ Dribble FG%</div>
+    <div class="form-sec">2+ Dribble FG%</div>
     <div class="form-grid">
       <div><label class="field-label">2+ Drib FG Made</label><input type="number" id="lDribFgm" min="0" placeholder="0"></div>
       <div><label class="field-label">2+ Drib FG Att</label><input type="number" id="lDribFga" min="0" placeholder="0"></div>
-    </div>`:''}
-    ${POTAST.has(p.name)?`<div class="form-sec">Potential Assists</div>
+    </div>
+    <div class="form-sec">Potential Assists</div>
     <div class="form-grid">
       <div><label class="field-label">Potential assists</label><input type="number" id="lPotAst" min="0" placeholder="0"></div>
       <div><label class="field-label">Actual assists</label><input type="number" id="lPotActAst" min="0" placeholder="0"></div>
-    </div>`:''}
+    </div>
     `:`
     <div class="form-sec">Game Info</div>
     <div class="form-grid">
@@ -647,8 +658,8 @@ function saveLog(type){
   const p=cur();
   if(type==='practice'){
     const row={date:gv('lDate')||new Date().toISOString().slice(0,10),drillW,drillL,fgm:gn('lFgm'),fga:gn('lFga'),tpm:gn('lTpm'),ast:gi('lAst'),tov:gi('lTov'),rebMade:gi('lRebMade'),rebTotal:gi('lRebTotal'),sprMade:gi('lSprMade'),sprTotal:gi('lSprTotal'),dribFgm:0,dribFga:0,potAst:0,potActAst:0};
-    if(DRIBBLE.has(p.name)){row.dribFgm=gi('lDribFgm');row.dribFga=gi('lDribFga');}
-    if(POTAST.has(p.name)){row.potAst=gi('lPotAst');row.potActAst=gi('lPotActAst');}
+    row.dribFgm=gi('lDribFgm');row.dribFga=gi('lDribFga');
+    row.potAst=gi('lPotAst');row.potActAst=gi('lPotActAst');
     p.practice.push(row);
   } else {
     p.games.push({date:gv('lDate'),opp:gv('lOpp')||'Unknown',result:gv('lResult'),min:gn('lMin'),pts:gn('lPts'),fgm:gn('lFgm'),fga:gn('lFga'),tpm:gn('lTpm'),tpa:gn('lTpa'),ftm:gn('lFtm'),fta:gn('lFta'),reb:gn('lReb'),ast:gn('lAst')});
